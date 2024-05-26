@@ -16,7 +16,7 @@
  * limitations under the License.                                             *
  ******************************************************************************/
 
-pragma solidity ^0.6.0;
+pragma solidity >=0.6.0 <0.9.0;
 
 import "./interfaces/IERC677.sol";
 import "./ERLC.sol";
@@ -37,7 +37,14 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
     ERLC(name, symbol, softcap, admins, kycadmins)
     {
         underlyingToken = IERC20(underlyingtoken);
-        _setupDecimals(ERC20(underlyingtoken).decimals());
+    }
+
+    /*************************************************************************
+     *                       ERC20 - overrides                               *
+     *************************************************************************/
+
+    function decimals() override public view returns (uint8) {
+        return ERC20(underlyingToken).decimals();
     }
 
     /*************************************************************************

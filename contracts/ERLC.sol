@@ -16,9 +16,9 @@
  * limitations under the License.                                             *
  ******************************************************************************/
 
-pragma solidity ^0.6.0;
+pragma solidity >=0.6.0 <0.9.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20Snapshot.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
 import "./Claimable.sol";
 import "./ERC20KYC.sol";
 import "./ERC20Softcap.sol";
