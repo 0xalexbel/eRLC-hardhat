@@ -18,64 +18,74 @@
 
 pragma solidity >=0.6.0 <0.9.0;
 
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interfaces/IERC677.sol";
 import "../ERLC.sol";
 
+contract ERLCNativeSwap is ERLC {
+    using SafeMath for uint256;
 
-contract ERLCNativeSwap is ERLC
-{
     uint256 public ConversionRate;
+    uint8 private m_decimals;
 
     constructor(
-        string    memory name,
-        string    memory symbol,
-        uint8            decimals,
-        uint256          softcap,
-        address[] memory admins,
-        address[] memory kycadmins)
-    public
-    ERLC(name, symbol, softcap, admins, kycadmins)
-    {
-        ConversionRate = 10 ** SafeMath.sub(18, decimals);
-        _setupDecimals(decimals);
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _softcap,
+        address[] memory _admins,
+        address[] memory _kycadmins
+    ) ERLC(_name, _symbol, _softcap, _admins, _kycadmins) {
+        ConversionRate = 10 ** SafeMath.sub(18, _decimals, "SafeMath: subtraction overflow");
+        m_decimals = _decimals;
+    }
+
+    /*************************************************************************
+     *                      Overload ERC20 decimals                          *
+     *************************************************************************/
+
+    function decimals() public view override returns (uint8) {
+        return m_decimals;
     }
 
     /*************************************************************************
      *                       Escrow - public interface                       *
      *************************************************************************/
-    receive()
-    external payable
-    {
+    receive() external payable {
         deposit();
     }
 
-    function deposit()
-    public payable
-    {
+    function deposit() public payable {
         _mint(_msgSender(), msg.value.div(ConversionRate));
-        Address.sendValue(_msgSender(), msg.value.mod(ConversionRate));
+        Address.sendValue(payable(_msgSender()), msg.value.mod(ConversionRate));
     }
 
-    function withdraw(uint256 amount)
-    public
-    {
+    function withdraw(uint256 amount) public {
         _burn(_msgSender(), amount);
-        Address.sendValue(_msgSender(), amount.mul(ConversionRate));
+        Address.sendValue(payable(_msgSender()), amount.mul(ConversionRate));
     }
 
     function recover()
-    public
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "only-admin")
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        uint256 delta = address(this).balance.sub(totalSupply().mul(ConversionRate));
+        uint256 delta = address(this).balance.sub(
+            totalSupply().mul(ConversionRate), "SafeMath: subtraction overflow"
+        );
 
         _mint(_msgSender(), delta.div(ConversionRate));
-        Address.sendValue(_msgSender(), delta.mod(ConversionRate));
+        Address.sendValue(payable(_msgSender()), delta.mod(ConversionRate));
     }
 
-    function claim(address token, address to)
-    public virtual override
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "only-admin")
+    function claim(
+        address token,
+        address to
+    )
+        public
+        virtual
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         super.claim(token, to);
     }

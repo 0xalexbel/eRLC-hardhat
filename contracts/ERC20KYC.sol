@@ -49,7 +49,7 @@ abstract contract ERC20KYC is IERC20KYC, ERC20, KYC
     }
 
     function messageForTransferRestriction(uint8 restrictionCode)
-    public view override returns (string memory)
+    public pure override returns (string memory)
     {
         if (restrictionCode == _RESTRICTION_MISSING_KYC_FROM)
         {

@@ -18,14 +18,17 @@
 
 pragma solidity >=0.6.0 <0.9.0;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IERC677.sol";
 import "./ERLC.sol";
 
 
 contract ERLCTokenSwap is ERLC, IERC677Receiver
 {
+    using SafeMath for uint256;
+
     IERC20 public immutable underlyingToken;
-    uint8 private _decimals;
+    uint8 private m_decimals;
 
     constructor(
         address          underlyingtoken,
@@ -34,11 +37,10 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
         uint256          softcap,
         address[] memory admins,
         address[] memory kycadmins)
-    public
     ERLC(name, symbol, softcap, admins, kycadmins)
     {
         underlyingToken = IERC20(underlyingtoken);
-        _decimals = ERC20(underlyingToken).decimals();
+        m_decimals = ERC20(underlyingtoken).decimals();
     }
 
     /*************************************************************************
@@ -46,7 +48,7 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
      *************************************************************************/
 
     function decimals() override public view returns (uint8) {
-        return _decimals;
+        return m_decimals;
     }
 
     /*************************************************************************
@@ -68,14 +70,15 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
 
     function recover()
     public
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "only-admin")
+    onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        _mint(_msgSender(), SafeMath.sub(underlyingToken.balanceOf(address(this)), totalSupply()));
+        _mint(_msgSender(), underlyingToken.balanceOf(address(this)).sub(totalSupply()));
+        //_mint(_msgSender(), SafeMath.sub(, totalSupply()));
     }
 
     function claim(address token, address to)
     public virtual override
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "only-admin")
+    onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(token != address(underlyingToken), "cannot-claim-underlying-token");
         super.claim(token, to);

@@ -27,14 +27,13 @@ abstract contract KYC is IKYC, AccessControl
     bytes32 public constant override KYC_ADMIN_ROLE  = keccak256("KYC_ADMIN_ROLE");
     bytes32 public constant override KYC_MEMBER_ROLE = keccak256("KYC_MEMBER_ROLE");
 
-    modifier onlyRole(bytes32 role, address member, string memory message)
-    {
-        require(hasRole(role, member), message);
-        _;
-    }
+    // modifier onlyRole(bytes32 role, address member, string memory message)
+    // {
+    //     require(hasRole(role, member), message);
+    //     _;
+    // }
 
     constructor(address[] memory admins, address[] memory kycadmins)
-    internal
     {
         _setRoleAdmin(KYC_MEMBER_ROLE, KYC_ADMIN_ROLE);
         for (uint256 i = 0; i < admins.length; ++i)

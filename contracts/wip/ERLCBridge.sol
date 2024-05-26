@@ -18,49 +18,77 @@
 
 pragma solidity >=0.6.0 <0.9.0;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interfaces/IERC677.sol";
 import "../ERLC.sol";
 
+contract ERLCBridge is ERLC {
+    using SafeMath for uint256;
 
-contract ERLCBridge is ERLC
-{
     address public bridgeContract;
+    uint8 private m_decimals;
 
-    constructor(string memory name, string memory symbol, uint8 decimals, uint256 softcap, address[] memory admins, address[] memory kycadmins)
-    public
-    ERLC(name, symbol, softcap, admins, kycadmins)
-    {
-        _setupDecimals(decimals);
+    constructor(
+        string memory name,
+        string memory symbol,
+        uint8 _decimals,
+        uint256 softcap,
+        address[] memory admins,
+        address[] memory kycadmins
+    ) ERLC(name, symbol, softcap, admins, kycadmins) {
+        m_decimals = _decimals;
     }
 
-    function setBridgeContract(address bridgecontract)
-    external
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "only-admin")
-    {
+    function setBridgeContract(
+        address bridgecontract
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         bridgeContract = bridgecontract;
+    }
+
+    /*************************************************************************
+     *                      Overload ERC20 decimals                          *
+     *************************************************************************/
+
+    function decimals() public view override returns (uint8) {
+        return m_decimals;
     }
 
     /*************************************************************************
      *           Overload ERC20 transfer to enforce call to bridge           *
      *************************************************************************/
-    function transfer(address recipient, uint256 amount)
-    public virtual override returns (bool)
-    {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public virtual override(ERC20, IERC20) returns (bool) {
         require(super.transfer(recipient, amount));
-        if (recipient == bridgeContract)
-        {
-            require(IERC677Receiver(recipient).onTokenTransfer(_msgSender(), amount, new bytes(0)), "transfer-refused-by-bridge");
+        if (recipient == bridgeContract) {
+            require(
+                IERC677Receiver(recipient).onTokenTransfer(
+                    _msgSender(),
+                    amount,
+                    new bytes(0)
+                ),
+                "transfer-refused-by-bridge"
+            );
         }
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount)
-    public virtual override returns (bool)
-    {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override(ERC20, IERC20) returns (bool) {
         require(super.transferFrom(sender, recipient, amount));
-        if (recipient == bridgeContract)
-        {
-            require(IERC677Receiver(recipient).onTokenTransfer(sender, amount, new bytes(0)), "transfer-refused-by-bridge");
+        if (recipient == bridgeContract) {
+            require(
+                IERC677Receiver(recipient).onTokenTransfer(
+                    sender,
+                    amount,
+                    new bytes(0)
+                ),
+                "transfer-refused-by-bridge"
+            );
         }
         return true;
     }
@@ -68,44 +96,33 @@ contract ERLCBridge is ERLC
     /*************************************************************************
      *                          Mintable - Burnable                          *
      *************************************************************************/
-    bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    function isMinter(address account)
-    public view returns (bool)
-    {
+    function isMinter(address account) public view returns (bool) {
         return hasRole(MINTER_ROLE, account);
     }
 
-    function addMinter(address account)
-    public virtual
-    {
+    function addMinter(address account) public virtual {
         grantRole(MINTER_ROLE, account);
     }
 
-    function renounceMinter()
-    public virtual
-    {
+    function renounceMinter() public virtual {
         renounceRole(MINTER_ROLE, _msgSender());
     }
 
-    function mint(address account, uint256 amount)
-    public virtual
-    onlyRole(MINTER_ROLE, _msgSender(), "restricted-to-admin")
-    returns (bool)
-    {
+    function mint(
+        address account,
+        uint256 amount
+    ) public virtual onlyRole(MINTER_ROLE) returns (bool) {
         _mint(account, amount);
         return true;
     }
 
-    function burn(uint256 amount)
-    public virtual
-    {
+    function burn(uint256 amount) public virtual {
         _burn(_msgSender(), amount);
     }
 
-    function burnFrom(address account, uint256 amount)
-    public virtual
-    {
+    function burnFrom(address account, uint256 amount) public virtual {
         uint256 decreasedAllowance = allowance(account, _msgSender()).sub(amount, "ERC20: burn amount exceeds allowance");
         _approve(account, _msgSender(), decreasedAllowance);
         _burn(account, amount);

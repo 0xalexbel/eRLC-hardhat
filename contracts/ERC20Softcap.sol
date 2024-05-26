@@ -29,7 +29,6 @@ abstract contract ERC20Softcap is ERC20
     event SoftCapReached();
 
     constructor(uint256 softcap)
-    internal
     {
         softCap        = softcap;
         softCapReached = false;

@@ -28,7 +28,6 @@ import "./ERC677.sol";
 abstract contract ERLC is ERC20KYC, ERC20Softcap, ERC20Snapshot, ERC677, Claimable
 {
     constructor(string memory name, string memory symbol, uint256 softcap, address[] memory admins, address[] memory kycadmins)
-    internal
     ERC20(name, symbol)
     ERC20Softcap(softcap)
     KYC(admins, kycadmins)
@@ -39,14 +38,14 @@ abstract contract ERLC is ERC20KYC, ERC20Softcap, ERC20Snapshot, ERC677, Claimab
      *************************************************************************/
     function claim(address token, address to)
     public virtual
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "restricted-to-admin")
+    onlyRole(DEFAULT_ADMIN_ROLE)
     {
         _claim(token, to);
     }
 
     function snapshot()
     public virtual
-    onlyRole(DEFAULT_ADMIN_ROLE, _msgSender(), "restricted-to-admin")
+    onlyRole(DEFAULT_ADMIN_ROLE)
     returns (uint256)
     {
         return _snapshot();
