@@ -25,6 +25,7 @@ import "./ERLC.sol";
 contract ERLCTokenSwap is ERLC, IERC677Receiver
 {
     IERC20 public immutable underlyingToken;
+    uint8 private _decimals;
 
     constructor(
         address          underlyingtoken,
@@ -37,6 +38,7 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
     ERLC(name, symbol, softcap, admins, kycadmins)
     {
         underlyingToken = IERC20(underlyingtoken);
+        _decimals = ERC20(underlyingToken).decimals();
     }
 
     /*************************************************************************
@@ -44,7 +46,7 @@ contract ERLCTokenSwap is ERLC, IERC677Receiver
      *************************************************************************/
 
     function decimals() override public view returns (uint8) {
-        return ERC20(underlyingToken).decimals();
+        return _decimals;
     }
 
     /*************************************************************************
